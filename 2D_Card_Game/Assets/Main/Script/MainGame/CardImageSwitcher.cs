@@ -17,6 +17,10 @@ public class CardImageSwitcher : MonoBehaviour
     public List<CardAssignment> cardAssignments = new List<CardAssignment>();
     private bool isInitialized = false;
 
+    /// <summary>
+    /// Initializes pairs such that each sprite is used exactly twice per pair, and
+    /// evenly distributes reuse when totalPairs exceeds available images.
+    /// </summary>
     public void InitializePairs(CardImageList imageList, int totalCards)
     {
         if (imageList == null || imageList.powerCardImages.Length == 0 || totalCards % 2 != 0)
@@ -29,29 +33,50 @@ public class CardImageSwitcher : MonoBehaviour
         originalBackSprites.Clear();
 
         int totalPairs = totalCards / 2;
-        List<Sprite> selectedImages = new List<Sprite>();
+        int available = imageList.powerCardImages.Length;
 
-        // Pick images for pairing
-        for (int i = 0; i < totalPairs; i++)
+        // Determine base usage and remainder for distributing pairs
+        int basePairs = totalPairs / available;
+        int extraPairs = totalPairs % available;
+
+        // Build a list of which image indices to use for each pair
+        List<int> pairIndices = new List<int>(totalPairs);
+        for (int i = 0; i < available; i++)
         {
-            selectedImages.Add(imageList.powerCardImages[i % imageList.powerCardImages.Length]);
+            for (int j = 0; j < basePairs; j++)
+                pairIndices.Add(i);
+        }
+        // Distribute extra pairs among random images
+        List<int> leftovers = new List<int>(available);
+        for (int i = 0; i < available; i++) leftovers.Add(i);
+        Shuffle(leftovers);
+        for (int k = 0; k < extraPairs; k++)
+            pairIndices.Add(leftovers[k]);
+
+        // Now build the sprite pool: two copies per pair index
+        List<Sprite> imagePool = new List<Sprite>(totalCards);
+        foreach (int idx in pairIndices)
+        {
+            var sprite = imageList.powerCardImages[idx];
+            imagePool.Add(sprite);
+            imagePool.Add(sprite);
         }
 
-        // Create two of each
-        List<Sprite> imagePool = new List<Sprite>(selectedImages);
-        imagePool.AddRange(selectedImages);
+        // Shuffle the final pool of cards
         Shuffle(imagePool);
 
-        // Assign shuffled images to cards by ID
-        for (int i = 0; i < totalCards; i++)
+        // Assign to card IDs
+        for (int id = 0; id < totalCards; id++)
         {
             cardAssignments.Add(new CardAssignment
             {
-                id = i,
-                assignedImage = imagePool[i]
+                id = id,
+                assignedImage = imagePool[id]
             });
         }
 
+        // Optional sanity check
+        VerifyPairing(imagePool);
         isInitialized = true;
     }
 
@@ -62,21 +87,17 @@ public class CardImageSwitcher : MonoBehaviour
             Debug.LogError("CardImageSwitcher not initialized.");
             return;
         }
-
         if (targetImage == null)
         {
             Debug.LogWarning("Target image is null.");
             return;
         }
-
-        CardAssignment assignment = cardAssignments.Find(card => card.id == id);
+        var assignment = cardAssignments.Find(c => c.id == id);
         if (assignment == null)
         {
             Debug.LogWarning($"No assignment found for card ID {id}");
             return;
         }
-
-        // Store the back sprite only once
         if (!originalBackSprites.ContainsKey(id))
             originalBackSprites[id] = targetImage.sprite;
 
@@ -85,20 +106,36 @@ public class CardImageSwitcher : MonoBehaviour
 
     public void RevertToBack(int id, Image targetImage)
     {
-        if (originalBackSprites.ContainsKey(id) && targetImage != null)
-        {
+        if (targetImage != null && originalBackSprites.ContainsKey(id))
             targetImage.sprite = originalBackSprites[id];
-        }
     }
 
     private void Shuffle<T>(List<T> list)
     {
-        for (int i = 0; i < list.Count; i++)
+        for (int i = list.Count - 1; i > 0; i--)
         {
-            int rnd = Random.Range(i, list.Count);
-            T temp = list[rnd];
-            list[rnd] = list[i];
-            list[i] = temp;
+            int j = Random.Range(0, i + 1);
+            var temp = list[i];
+            list[i] = list[j];
+            list[j] = temp;
+        }
+    }
+
+    private void VerifyPairing(List<Sprite> pool)
+    {
+        var counts = new Dictionary<string, int>();
+        foreach (var sprite in pool)
+        {
+            var key = sprite.name;
+            counts.TryGetValue(key, out int c);
+            counts[key] = c + 1;
+        }
+        foreach (var kvp in counts)
+        {
+            if (kvp.Value != 2)
+                Debug.LogError($"Sprite '{kvp.Key}' appears {kvp.Value} times (expected 2).");
+            else
+                Debug.Log($"Sprite '{kvp.Key}' correctly paired.");
         }
     }
 }

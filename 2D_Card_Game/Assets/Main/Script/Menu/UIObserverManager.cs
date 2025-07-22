@@ -3,11 +3,13 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 
 public class UIObserverManager : MonoBehaviour
 {
     public TextMeshProUGUI startButtonText;
     public TextMeshProUGUI soundButtonText;
+    public GameObject layoutPanel;
     public Button startButton;
     public Button soundButton;
     public Button exitButton;
@@ -18,8 +20,27 @@ public class UIObserverManager : MonoBehaviour
 
 
     private List<IUIObserver> observers = new List<IUIObserver>();
-   
 
+    private void OnEnable()
+    {
+        UILivesManager.OnStartTextNotify += UpdateText;
+    }
+
+    private void OnDisable()
+    {
+        UILivesManager.OnStartTextNotify -= UpdateText;
+    }
+
+    private void UpdateText(string newText)
+    {
+        Debug.Log($"[StartButtonObserver] Setting text to: {newText}");
+        startButtonText.text = newText;
+        startButton.onClick.AddListener(() =>
+        {
+            string currentScene = SceneManager.GetActiveScene().name;
+            SceneManager.LoadScene(currentScene);
+        });
+    }
     void Start()
     {
         RegisterObservers();
@@ -31,7 +52,7 @@ public class UIObserverManager : MonoBehaviour
 
     void RegisterObservers()
     {
-        observers.Add(new StartButtonObserver(startButtonText));
+        observers.Add(new StartButtonObserver(startButtonText,layoutPanel));
         observers.Add(new SoundButtonObserver(soundButtonText, audioSource));
         observers.Add(new ExitButtonObserver());
     }

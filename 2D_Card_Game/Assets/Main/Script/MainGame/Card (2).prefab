@@ -136,7 +136,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   flipButton: {fileID: 941202566597258071}
   flipDuration: 0.3
-  showBackDelay: 3
+  showBackDelay: 2
   backImage: {fileID: 6086326649818202087}
   cardImageList: {fileID: 11400000, guid: 24d107f06748f3246928b275f585fc7f, type: 2}
   cardImageSwitcher: {fileID: 4333993464364188814}

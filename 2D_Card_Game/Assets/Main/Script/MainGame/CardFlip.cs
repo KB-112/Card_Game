@@ -1,7 +1,6 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
-
 public class CardFlip : MonoBehaviour
 {
     [Header("UI Button that triggers the flip")]
@@ -18,10 +17,19 @@ public class CardFlip : MonoBehaviour
     public CardImageSwitcher cardImageSwitcher;
     public int cardId;
     public CardMatchManagerSO matchManager;
+   public  int colTemp, rowTemp;
+   
+
+
+
     void Start()
     {
-        cardImageSwitcher.InitializePairs(cardImageList,20);
+        colTemp = CardGridPlaceholder.columns;
+        rowTemp = CardGridPlaceholder.rows;
+        cardImageSwitcher.InitializePairs(cardImageList, colTemp * rowTemp);
+
         flipButton.onClick.AddListener(OnCardTap);
+
 
     }
 

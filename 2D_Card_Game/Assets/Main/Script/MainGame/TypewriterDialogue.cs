@@ -20,8 +20,22 @@ public class TypewriterDialogue : MonoBehaviour
 
     private DialogueLines currentDialogue;
     private int currentLineIndex = 0;
+    void OnEnable()
+    {
+        HoverColorChanger.OnGridSelected += HandleGridSelected;
+    }
 
-    void Start()
+    void OnDisable()
+    {
+        HoverColorChanger.OnGridSelected -= HandleGridSelected;
+    }
+
+    private void HandleGridSelected(int col, int row)
+    {
+        textMeshPro.text = "";
+
+    }
+        void Start()
     {
         if (playOnStart && !string.IsNullOrEmpty(startStatus))
         {

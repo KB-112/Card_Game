@@ -20,6 +20,7 @@ public class CardMatchManagerSO : ScriptableObject
 
     public Action<int> OnComboUpdated;
 
+    
     public void RegisterCard(int cardId, Sprite image, Action revertCallback, GameObject cardObject)
 
     {
@@ -33,6 +34,7 @@ public class CardMatchManagerSO : ScriptableObject
             // If a mismatch, only revert if we had a valid combo (2 or more)
             if (openedCards.Count >= 2)
             {
+                UILivesManager.OnLifeLost?.Invoke();
                 Debug.Log("Mismatch! Combo broken. Reverting all.");
                 RevertAllCards();
             }
@@ -59,6 +61,7 @@ public class CardMatchManagerSO : ScriptableObject
 
         if (openedCards.Count >= 2)
         {
+            ComboScoreManager.RegisterComboHit(openedCards.Count);
             Debug.Log($"Combo continuing: {openedCards.Count} cards matched.");
             OnComboUpdated?.Invoke(openedCards.Count);
             

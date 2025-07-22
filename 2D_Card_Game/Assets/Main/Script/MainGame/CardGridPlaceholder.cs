@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using static System.Net.Mime.MediaTypeNames;
 
 public class CardGridPlaceholder : MonoBehaviour
 {
@@ -9,22 +10,45 @@ public class CardGridPlaceholder : MonoBehaviour
     public GameObject cardPrefab;
 
     [Header("Layout Settings")]
-    public int columns = 2;
-    public int rows = 2;
+    public static int columns = 2;
+    public static int rows = 2;
     public float spacingX = 10f;
     public float spacingY = 10f;
 
     [Header("Grid Padding (around edges)")]
     public float paddingX = 20f;
     public float paddingY = 20f;
-
-    void Start()
+    private UIObserverManager manager;
+    private bool gameCompleted = false;
+    public GameObject tempPanel;
+   
+    void OnEnable()
     {
-        CardComponentInitializer();
-        SetupHolder();
+        HoverColorChanger.OnGridSelected += HandleGridSelected;
     }
 
-    void CardComponentInitializer()
+    void OnDisable()
+    {
+        HoverColorChanger.OnGridSelected -= HandleGridSelected;
+    }
+
+    private void HandleGridSelected(int col, int row)
+    {
+        Debug.Log($"[Receiver] Grid selected: Col = {col}, Row = {row}");
+        columns = col;
+        rows = row;
+
+        if (col != 0)
+        {
+            manager = FindObjectOfType<UIObserverManager>();
+
+            CardComponentInitializer();
+            SetupHolder();
+        }
+       
+    }
+    
+        void CardComponentInitializer()
     {
         if (cardReference == null || cardHolderPanel == null || cardPrefab == null)
         {
@@ -50,11 +74,22 @@ public class CardGridPlaceholder : MonoBehaviour
 
         GenerateCards(cardSize);
     }
+   
 
     void GenerateCards(Vector2 cardSize)
     {
         if (cardReference == null || cardHolderPanel == null || cardPrefab == null)
             return;
+
+        // Destroy all previous clones except the reference
+        foreach (Transform child in cardHolderPanel)
+        {
+            if (child != cardReference)  
+            {
+                Destroy(child.gameObject);
+            }
+        }
+
         int cardId = 0;
         for (int row = 0; row < rows; row++)
         {
@@ -73,8 +108,8 @@ public class CardGridPlaceholder : MonoBehaviour
 
                 rt.anchoredPosition = new Vector2(posX, posY);
 
-              
                 SetPivotAndKeepPosition(rt, new Vector2(0.5f, 0.5f));
+
                 CardFlip flip = card.GetComponent<CardFlip>();
                 flip.cardId = cardId;
                 cardId++;
@@ -82,7 +117,8 @@ public class CardGridPlaceholder : MonoBehaviour
         }
     }
 
-   
+
+
 
 
     void SetPivotAndKeepPosition(RectTransform rt, Vector2 newPivot)
